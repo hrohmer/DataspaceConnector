@@ -31,6 +31,7 @@ public class ResourceRepresentation implements Serializable {
 
     @Id
     @JsonProperty("uuid")
+    @Schema(description = "The unique identifier of this resource representation.")
     private UUID uuid;
 
     @JsonProperty("type")

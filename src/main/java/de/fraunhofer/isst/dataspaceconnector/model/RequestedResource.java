@@ -41,7 +41,7 @@ public class RequestedResource implements ConnectorResource {
     private Date modified;
 
     @NotNull
-    @Column(columnDefinition = "BYTEA")
+    @Column(columnDefinition = "BLOB")
     @JsonProperty("metadata")
     private ResourceMetadata resourceMetadata;
 

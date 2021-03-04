@@ -1,6 +1,7 @@
 package de.fraunhofer.isst.dataspaceconnector.controller;
 
 import de.fraunhofer.iais.eis.BaseConnectorImpl;
+import de.fraunhofer.iais.eis.Connector;
 import de.fraunhofer.iais.eis.ResourceCatalog;
 import de.fraunhofer.iais.eis.ResourceCatalogBuilder;
 import de.fraunhofer.iais.eis.util.ConstraintViolationException;
@@ -13,13 +14,18 @@ import de.fraunhofer.isst.dataspaceconnector.services.resources.ResourceService;
 import de.fraunhofer.isst.ids.framework.configuration.ConfigurationContainer;
 import de.fraunhofer.isst.ids.framework.configuration.SerializerProvider;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -124,11 +130,18 @@ public class MainController {
     @Operation(summary = "Connector Self-description",
         description = "Get the connector's self-description.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Ok"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")})
-    @RequestMapping(value = {"/admin/api/connector"}, method = RequestMethod.GET)
+            @ApiResponse(responseCode = "200", description = "Ok",
+            		content = @Content(mediaType = MediaType.TEXT_PLAIN_VALUE,
+//            		schema = @Schema(title = "the connector description", implementation = Connector.class))),
+            		schema = @Schema(title = "the connector description", type = "string"))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+            	content = @Content(mediaType = MediaType.TEXT_PLAIN_VALUE,
+            	schema = @Schema(title = "the error message", type = "string")))})
+    @RequestMapping(value = {"/admin/api/connector"}, method = RequestMethod.GET)//, produces = MediaType.TEXT_PLAIN_VALUE)
     @ResponseBody
-    public ResponseEntity<String> getSelfService() {
+    public ResponseEntity<Object> getSelfService() {
+        final HttpHeaders headers = new HttpHeaders();
+        headers.setCacheControl(CacheControl.noCache());
         try {
             // Get a local copy of the current connector.
             var connector = (BaseConnectorImpl) configurationContainer.getConnector();
@@ -136,17 +149,21 @@ public class MainController {
             // Modify a connector for exposing a resource catalog
             connector.setResourceCatalog(Util.asList(buildResourceCatalog()));
 
+            headers.setContentType(MediaType.TEXT_PLAIN);
             return new ResponseEntity<>(serializerProvider.getSerializer().serialize(connector),
-                HttpStatus.OK);
+//            return new ResponseEntity<>(connector,
+                headers, HttpStatus.OK);
         } catch (ConnectorConfigurationException exception) {
             // No connector found
             LOGGER.warn("No connector has been configurated.");
+            headers.setContentType(MediaType.TEXT_PLAIN);
             return new ResponseEntity<>("No connector is currently available.",
                 HttpStatus.INTERNAL_SERVER_ERROR);
-        } catch (IOException exception) {
+        } catch (Throwable exception) {
             // Could not serialize the connector.
             LOGGER.warn("Could not serialize the connector. [exception=({})]",
                 exception.getMessage());
+            headers.setContentType(MediaType.TEXT_PLAIN);
             return new ResponseEntity<>("No connector is currently available.",
                 HttpStatus.INTERNAL_SERVER_ERROR);
         }

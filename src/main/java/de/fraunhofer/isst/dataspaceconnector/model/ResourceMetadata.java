@@ -9,6 +9,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import de.fraunhofer.iais.eis.Contract;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -41,6 +43,7 @@ public class ResourceMetadata implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @JsonProperty("title")
+    @Schema(description = "The human readable title of this resource. This title will be part of the registered resource and may be visible to all participants.")
     private String title;
 
     @JsonProperty("description")
@@ -50,7 +53,7 @@ public class ResourceMetadata implements Serializable {
     @JsonProperty("keywords")
     private List<String> keywords;
 
-    @Column(columnDefinition = "BYTEA")
+    @Column(columnDefinition = "BLOB")
     @JsonProperty("policy")
     private String policy;
 
@@ -68,7 +71,7 @@ public class ResourceMetadata implements Serializable {
 
     @NotNull
     @ElementCollection
-    @Column(columnDefinition = "BYTEA")
+    @Column(columnDefinition = "BLOB")
     @JsonProperty("representations")
     @JsonSerialize(using = RepresentationsToJson.class)
     @JsonDeserialize(using = JsonToRepresentation.class)
